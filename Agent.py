@@ -81,7 +81,7 @@ class Agent:
 
         for c in range(7):
             if env.board[0, c] != 0:
-                q_values[c] = -1e10
+                q_values[c] = -numpy.inf
 
         max_q = numpy.max(q_values)
         best_actions = [i for i, q in enumerate(q_values) if q == max_q]

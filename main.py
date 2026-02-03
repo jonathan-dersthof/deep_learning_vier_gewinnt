@@ -32,7 +32,6 @@ def main():
         else:
             vg.show_board()
             col = int(input(f"Spieler {players[player]} ist dran:"))-1
-            #col = numpy.random.randint(7)
             move = vg.make_move(col, player)
 
         if move:

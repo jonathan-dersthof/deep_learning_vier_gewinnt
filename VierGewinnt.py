@@ -21,11 +21,44 @@ class VierGewinnt:
     def in_bounds(tile : list[int]) -> bool:
         return 0 <= tile[0] < 6 and 0 <= tile[1] < 7
 
-    def random_move(self):
-        valid_moves = [col for col in range(7) if self.board[0, col] == 0]
-        random_col = valid_moves[numpy.random.randint(0, len(valid_moves))]
+    def random_move(self, opponent, player):
+        state = self.board.copy()
 
-        return self.make_move(random_col, -1)
+        valid_moves = [col for col in range(7) if state[0, col] == 0]
+        random_col = valid_moves[numpy.random.randint(0, len(valid_moves))]
+        move = self.make_move(random_col, -1)
+
+        if self.check_win(move, player):
+            reward = opponent.winner_reward
+            self.running = False
+            opponent.remember(state, random_col, reward, self.board.copy(), self.running)
+
+        return move
+
+    def model_move(self, agent, player):
+        state = self.board.copy()
+
+        if player == -1:
+            state *= -1
+
+        action = agent.act(state, self)
+        move = self.make_move(action, player)
+
+        if self.check_win(move, player):
+            reward = agent.winner_reward
+            self.running = False
+        else:
+            reward = agent.survive_reward
+
+        next_state = self.board.copy()
+
+        if player == -1:
+            next_state *= -1
+
+        agent.remember(state, action, reward, next_state, self.running)
+        agent.reward += reward
+
+        return move
 
     def check_win(self, tile, player) -> bool:
         row = tile[0]
@@ -47,6 +80,13 @@ class VierGewinnt:
                 return True
 
         return False
+
+    def check_draw(self):
+        if not 0 in self.get_state():
+            self.running = False
+            return True
+        else:
+            return False
 
     def show_board(self):
         players = {
