@@ -56,7 +56,11 @@ class VierGewinnt:
             next_state *= -1
 
         agent.remember(state, action, reward, next_state, self.running)
-        agent.reward += reward
+
+        if reward == 1:
+            agent.reward = agent.winner_reward
+        else:
+            agent.reward += reward
 
         return move
 

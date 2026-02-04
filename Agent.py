@@ -29,7 +29,7 @@ class Agent:
         self.action_size = action_size
         self.hidden_size = hidden_size
 
-        self.memory = deque(maxlen=250000)
+        self.memory = deque(maxlen=100000)
 
         self.gamma = gamma
         self.epsilon = epsilon

@@ -8,17 +8,12 @@ def main():
         -1 : "Spieler 2",
     }
     vg = VierGewinnt()
-    ki = Agent(state_size=42, action_size=7, hidden_size=256)
+    ki = Agent(state_size=42, action_size=7, hidden_size=128)
 
     model1 = "models/agent_1_ep99900.pth"
 
-    model2 = "training/trainer_16/base_model_2/final_agent_episode99999.pth"
-    model3 = "training/trainer_16/base_model_3/final_agent_episode99999.pth"
-    model4 = "training/trainer_16/base_model_4/final_agent_episode99999.pth"
-
-    model5 = "training/trainer_17/base_model/final_agent_episode99999.pth"
-    model6 = "training/trainer_17/base_model_1/final_agent_episode99999.pth"
-    model7 = "training/trainer_17/base_model_2/final_agent_episode99999.pth"
+    model2 = "training/trainer/base_model/final_agent_episode100000.pth"
+    model3 = "training/trainer/self_play_model_3/models/agent_a_episode24000.pth"
 
     ki.load_model(model3)
     ki.epsilon = 0.0

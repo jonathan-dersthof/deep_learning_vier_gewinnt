@@ -1,0 +1,5 @@
+Agent attributes
+winner reward = 1.0
+draw reward = 0.1
+lose_reward =  -1.0
+survive_reward = 0.0001
