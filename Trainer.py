@@ -52,14 +52,14 @@ class Trainer:
             os.mkdir(f"training/{self.directory}")
 
             with open(f"training/{self.directory}/DQN_attributes", "x") as f:
-                f.write("DQN attributes\n"
+                f.write("LinearDQN attributes\n"
                         f"hidden size = {self.base_agent.hidden_size}\n")
 
     def setup_training(self, training_type):
         new_directory = next_directory(f"training/{self.directory}", f"{training_type}_model")
 
         os.mkdir(f"training/{self.directory}/{new_directory}")
-        os.mkdir(f"training/{self.directory}/{new_directory}/models")
+        os.mkdir(f"training/{self.directory}/{new_directory}/checkpoints")
 
         with open(f"training/{self.directory}/{new_directory}/agent_attributes", "x") as file:
             file.write("Agent attributes\n"
@@ -118,7 +118,7 @@ class Trainer:
         agent_a.set(winner_reward, draw_reward, lose_reward, survive_reward)
         agent_b.set(winner_reward, draw_reward, lose_reward, survive_reward)
 
-        agent_a.epsilon_decay = 0.999
+        agent_a.epsilon_decay = 0.9995
         if frozen:
             agent_b.epsilon_min = 0
             agent_b.epsilon = 0
@@ -146,19 +146,16 @@ class Trainer:
             self.self_play(int(episodes/cycles), self.active_agent, "", winner_reward, draw_reward, lose_reward, survive_reward)
 
 if __name__ == "__main__":
-    new_trainer = Trainer(hidden_size = 128,
+    new_trainer = Trainer(hidden_size = 256,
                           state_size = 42,
                           action_size = 7,
 
-                          batch_size = 128,
+                          batch_size = 64,
                           epsilon_decay = 0.99995,
 
-                          survive_reward = 0.01,
+                          survive_reward = 0.02,
     )
 
     print(new_trainer.directory)
 
     new_trainer.full_training(100000, 4)
-    #new_trainer.base_model(episodes = 10000)
-    #new_trainer.base_model(episodes = 100000)
-    #new_trainer.base_model(episodes = 100000)

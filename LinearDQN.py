@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-class DQN(nn.Module):
+class LinearDQN(nn.Module):
     def __init__(self, hidden_size):
-        super(DQN, self).__init__()
+        super(LinearDQN, self).__init__()
 
         self.network = nn.Sequential(
             nn.Flatten(),

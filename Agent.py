@@ -5,7 +5,7 @@ import random
 import numpy
 
 from collections import deque
-from DeepQNetwork import DQN
+from LinearDQN import LinearDQN
 
 class Agent:
     def __init__(self,
@@ -38,7 +38,14 @@ class Agent:
         self.learning_rate = learning_rate
         self.batch_size = batch_size
 
-        self.model = DQN(hidden_size)
+        self.model = LinearDQN(hidden_size)
+        self.target_model = LinearDQN(hidden_size)
+        self.target_model.load_state_dict(self.model.state_dict())
+        self.target_model.eval()
+
+        self.update_step = 1000
+        self.steps = 0
+
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
 
@@ -63,8 +70,12 @@ class Agent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-    def act(self, state, env):
-        valid_moves = [c for c in range(7) if env.board[0, c] == 0]
+    def act(self, env):
+        state = env.get_state()
+        if env.current_player == -1:
+            state *= -1
+
+        valid_moves = env.get_valid_moves()
 
         if not valid_moves:
             return 0
@@ -103,7 +114,8 @@ class Agent:
         current_q_values = self.model(states).gather(1, actions.unsqueeze(1))
 
         with torch.no_grad():
-            max_next_q_values = self.model(next_states).max(1)[0]
+            next_actions = self.model(next_states).argmax(1)
+            max_next_q_values = self.target_model(next_states).gather(1, next_actions.unsqueeze(1)).squeeze()
             target_q_values = rewards + (self.gamma * max_next_q_values * (1 - dones))
 
         loss = self.criterion(current_q_values.squeeze(), target_q_values)
@@ -115,11 +127,17 @@ class Agent:
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
+        self.steps += 1
+
+        if self.steps % self.update_step == 0:
+           self.target_model.load_state_dict(self.model.state_dict())
+
     def save_model(self, path):
         torch.save(self.model.state_dict(), path)
         print(f"Modell gespeichert unter {path}")
 
     def load_model(self, path):
         self.model.load_state_dict(torch.load(path))
+        self.target_model.load_state_dict(self.model.state_dict())
         self.model.eval()
         print(f"Modell aus '{path}' geladen.")
