@@ -4,13 +4,15 @@ from numpy import random
 
 class Episode:
     def __init__(self,
+                 env,
                  agent_a,
                  agent_b = None):
         self.agent_a = agent_a
         self.agent_b = agent_b
-        self.game_states_str = []
 
-        self.env = VierGewinnt()
+        self.env = env
+
+        self.game_states_str = []
 
     def final_rewards(self):
         match self.env.outcome:
@@ -68,15 +70,11 @@ class Episode:
         if self.agent_b:
             self.agent_b.reward = 0
 
-        moves = 0
-
         while not self.env.done:
             self.run_action()
             self.game_states_str.append(self.env.get_state_str())
 
             if not self.env.done:
                 self.env.current_player *= -1
-
-            moves += 1
 
         self.final_rewards()

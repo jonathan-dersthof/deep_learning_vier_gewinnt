@@ -43,7 +43,6 @@ class Trainer:
                                 draw_reward,
                                 lose_reward,
                                 survive_reward))
-        self.active_agent = None
 
         self.directory = directory
         self.log_data = []

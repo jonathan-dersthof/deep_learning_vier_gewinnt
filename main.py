@@ -1,8 +1,10 @@
-from VierGewinnt import VierGewinnt
 import numpy
-from Agent import Agent
 
-def main():
+from VierGewinnt import VierGewinnt
+from Agent import Agent
+from Game import Game
+
+"""def main():
     players = {
         1 : "Spieler 1",
         -1 : "Spieler 2",
@@ -13,7 +15,7 @@ def main():
     model1 = "models/agent_1_ep99900.pth"
 
     model2 = "training/trainer_3/base_model/final_agent_episode100000.pth"
-    model3 = "training/trainer_13/self_play_model_9/final_agent_episode25000.pth"
+    model3 = "training/trainer_18/self_play_model_3/final_agent_episode25000.pth"
 
     ki.load_model(model3)
     ki.epsilon = 0.1
@@ -38,8 +40,21 @@ def main():
                 vg.show_board()
                 break
 
-            vg.current_player *= -1
+            vg.current_player *= -1"""
 
+def main():
+    model1 = "models/agent_1_ep99900.pth"
+
+    model2 = "training/trainer_3/base_model/final_agent_episode100000.pth"
+    model3 = "training/trainer_18/self_play_model_3/final_agent_episode25000.pth"
+
+    ki = Agent(state_size=42, action_size=7, hidden_size=256)
+
+    ki.load_model(model3)
+    ki.epsilon = 0.1
+
+    game = Game("Johny", ki)
+    game.play()
 
 if __name__ == "__main__":
     main()

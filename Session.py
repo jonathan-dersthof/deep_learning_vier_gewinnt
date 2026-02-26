@@ -18,6 +18,7 @@ class Session:
         self.agent_b = agent_b
         self.current_agent_b = None
 
+        self.env = VierGewinnt()
         self.directory = directory
 
         self.log_data_a = []
@@ -80,18 +81,19 @@ class Session:
 
     def run_episode(self):
         if not self.agent_b:
-            episode = Episode(self.agent_a)
+            episode = Episode(self.env, self.agent_a)
         elif len(self.agent_b) == 1:
-            episode = Episode(self.agent_a, self.agent_b[0])
+            episode = Episode(self.env, self.agent_a, self.agent_b[0])
         else:
             self.current_agent_b = numpy.random.randint(len(self.agent_b))
-            episode = Episode(self.agent_a, self.agent_b[self.current_agent_b])
+            episode = Episode(self.env, self.agent_a, self.agent_b[self.current_agent_b])
 
         episode.run()
         self.current_game = episode.game_states_str
 
         self.learn()
         self.save_episode()
+        self.env.reset()
 
     def run(self):
         while self.current_episode < self.total_episodes:

@@ -1,16 +1,21 @@
 import numpy
-from Agent import *
 
 class VierGewinnt:
     def __init__(self):
         self.board = numpy.zeros((6, 7))
-        self.current_player = random.choice([-1, 1])
+        self.current_player = numpy.random.choice([-1, 1])
         self.done = False
         self.outcome = None
         self.players = {
             1 : "Spieler 1",
             -1 : "Spieler 2"
         }
+
+    def reset(self):
+        self.board = numpy.zeros((6, 7))
+        self.current_player = numpy.random.choice([-1, 1])
+        self.done = False
+        self.outcome = None
 
     def get_state(self) -> numpy.ndarray:
         return self.board.copy()
