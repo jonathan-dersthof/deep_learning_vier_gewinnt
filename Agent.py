@@ -49,7 +49,7 @@ class Agent:
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
 
-        self.winner_reward = winner_reward
+        self.win_reward = winner_reward
         self.draw_reward = draw_reward
         self.lose_reward = lose_reward
         self.survive_reward = survive_reward
@@ -57,12 +57,12 @@ class Agent:
         self.reward = 0
 
     def set(self,
-            winner_reward,
+            win_reward,
             draw_reward,
             lose_reward,
             survive_reward
-    ):
-        self.winner_reward = winner_reward
+            ):
+        self.win_reward = win_reward
         self.draw_reward = draw_reward
         self.lose_reward = lose_reward
         self.survive_reward = survive_reward
@@ -98,6 +98,14 @@ class Agent:
         best_actions = [i for i, q in enumerate(q_values) if q == max_q]
 
         return random.choice(best_actions)
+
+    def correct_last_reward(self, reward):
+        if self.memory:
+            last_memory = list(self.memory[-1])
+            last_memory[2] = reward
+            last_memory[4] = True
+            self.memory[-1] = tuple(last_memory)
+            self.reward += reward
 
     def replay(self):
         if len(self.memory) < self.batch_size:

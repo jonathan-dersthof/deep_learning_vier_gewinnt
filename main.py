@@ -13,7 +13,7 @@ def main():
     model1 = "models/agent_1_ep99900.pth"
 
     model2 = "training/trainer_3/base_model/final_agent_episode100000.pth"
-    model3 = "training/trainer_7/self_play_model_1/final_agent_a_episode25000.pth"
+    model3 = "training/trainer_13/self_play_model_9/final_agent_episode25000.pth"
 
     ki.load_model(model3)
     ki.epsilon = 0.1
@@ -26,7 +26,7 @@ def main():
             move = vg.make_move(action)
         else:
             vg.show_board()
-            col = int(input(f"Spieler {players[vg.current_player]} ist dran:"))-1
+            col = int(input(f"{players[vg.current_player]} ist dran:"))-1
             move = vg.make_move(col)
 
         if move:

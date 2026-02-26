@@ -12,50 +12,57 @@ class Episode:
 
         self.env = VierGewinnt()
 
-    def run_action(self, env):
-        if env.current_player == 1:
-            move = env.model_move(self.agent_a)
-        elif self.agent_b:
-            move = env.model_move(self.agent_b)
-        else:
-            move = env.random_move()
-
-        return move[1]
-
     def final_rewards(self):
-        if self.env.check_draw():
-            if self.agent_a.memory:
-                last = list(self.agent_a.memory[-1])
-                last[2] = self.agent_a.draw_reward
-                last[4] = True
-                self.agent_a.memory[-1] = tuple(last)
-                self.agent_a.reward += self.agent_a.draw_reward
+        match self.env.outcome:
+            case "draw":
+                self.agent_a.correct_last_reward(self.agent_a.draw_reward)
 
-            if self.agent_b and self.agent_b.memory:
-                last = list(self.agent_b.memory[-1])
-                last[2] = self.agent_b.draw_reward
-                last[4] = True
-                self.agent_b.memory[-1] = tuple(last)
-                self.agent_b.reward += self.agent_b.draw_reward
+                if self.agent_b:
+                    self.agent_b.correct_last_reward(self.agent_b.draw_reward)
+            case "win":
+                match self.env.players[self.env.current_player]:
+                    case "Spieler 1":
+                        self.agent_a.correct_last_reward(self.agent_a.win_reward)
+
+                        if self.agent_b:
+                            self.agent_b.correct_last_reward(self.agent_b.lose_reward)
+
+                    case "Spieler 2":
+                        self.agent_a.correct_last_reward(self.agent_a.lose_reward)
+
+                        if self.agent_b:
+                            self.agent_b.correct_last_reward(self.agent_b.win_reward)
+
+    def run_action(self):
+        state = self.env.get_state()
+
+        if self.env.current_player == 1:
+            action = self.agent_a.act(self.env)
+        elif self.agent_b:
+            action = self.agent_b.act(self.env)
         else:
-            if self.env.current_player == 1:
-                if self.agent_a.memory:
-                    last_memory = list(self.agent_a.memory[-1])
-                    last_memory[2] = self.agent_a.lose_reward
-                    last_memory[4] = True
-                    self.agent_a.memory[-1] = tuple(last_memory)
-                    self.agent_a.reward += last_memory[2]
+            action = self.env.random_move()
 
-            elif self.env.current_player == -1 and self.agent_b:
-                if self.agent_b.memory:
-                    last_memory = list(self.agent_b.memory[-1])
-                    last_memory[2] = self.agent_b.lose_reward
-                    last_memory[4] = True
-                    self.agent_b.memory[-1] = tuple(last_memory)
-                    self.agent_b.reward += last_memory[2]
+        self.env.step(action)
+        next_state = self.env.get_state()
+
+        if self.env.current_player == -1:
+            next_state *= -1
+            state *= -1
+
+        if self.env.current_player == 1:
+            reward = self.agent_a.survive_reward
+            self.agent_a.reward += reward
+
+            self.agent_a.remember(state, action, reward, next_state, self.env.done)
+        elif self.agent_b:
+            reward = self.agent_b.survive_reward
+            self.agent_b.reward += reward
+
+            self.agent_b.remember(state, action, reward, next_state, self.env.done)
 
     def run(self):
-        self.game_states_str = self.env.get_board()
+        self.game_states_str.append(self.env.get_state_str())
 
         self.agent_a.reward = 0
         if self.agent_b:
@@ -64,12 +71,12 @@ class Episode:
         moves = 0
 
         while not self.env.done:
-            self.run_action(self.env)
-            self.game_states_str.append(self.env.get_board())
+            self.run_action()
+            self.game_states_str.append(self.env.get_state_str())
 
-            self.env.check_draw()
-            self.env.current_player *= -1
+            if not self.env.done:
+                self.env.current_player *= -1
+
             moves += 1
-
 
         self.final_rewards()

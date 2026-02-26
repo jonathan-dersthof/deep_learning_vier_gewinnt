@@ -25,9 +25,10 @@ class Trainer:
                  lose_reward = -1.0,
                  survive_reward = 0.01,
 
-                 directory = next_directory("training", "trainer"),
+                 directory = next_directory("training", "trainer")
                  ):
-        self.base_agent = Agent(state_size,
+        self.agents = []
+        self.agents.append(Agent(state_size,
                                 action_size,
                                 hidden_size,
 
@@ -41,7 +42,7 @@ class Trainer:
                                 winner_reward,
                                 draw_reward,
                                 lose_reward,
-                                survive_reward, )
+                                survive_reward))
         self.active_agent = None
 
         self.directory = directory
@@ -53,9 +54,9 @@ class Trainer:
 
             with open(f"training/{self.directory}/DQN_attributes", "x") as f:
                 f.write("LinearDQN attributes\n"
-                        f"hidden size = {self.base_agent.hidden_size}\n")
+                        f"hidden size = {self.agents[0].hidden_size}\n")
 
-    def setup_training(self, training_type):
+    def setup_training(self, training_type, agent):
         new_directory = next_directory(f"training/{self.directory}", f"{training_type}_model")
 
         os.mkdir(f"training/{self.directory}/{new_directory}")
@@ -63,10 +64,10 @@ class Trainer:
 
         with open(f"training/{self.directory}/{new_directory}/agent_attributes", "x") as file:
             file.write("Agent attributes\n"
-                    f"winner reward = {self.base_agent.winner_reward}\n"
-                    f"draw reward = {self.base_agent.draw_reward}\n"
-                    f"lose_reward =  {self.base_agent.lose_reward}\n"
-                    f"survive_reward = {self.base_agent.survive_reward}"
+                    f"winner reward = {agent.win_reward}\n"
+                    f"draw reward = {agent.draw_reward}\n"
+                    f"lose_reward =  {agent.lose_reward}\n"
+                    f"survive_reward = {agent.survive_reward}"
                     )
 
         return new_directory
@@ -79,18 +80,16 @@ class Trainer:
                    lose_reward = -1.0,
                    survive_reward = 0.01,
                    ):
-        active_agent = copy.deepcopy(self.base_agent)
+        base_agent = self.agents[0]
 
         self.setup_trainer()
-        active_agent.set(winner_reward, draw_reward, lose_reward, survive_reward)
+        base_agent.set(winner_reward, draw_reward, lose_reward, survive_reward)
 
-        new_directory = f"{self.directory}/{self.setup_training("base")}"
+        new_directory = f"{self.directory}/{self.setup_training("base", base_agent)}"
 
-        training_session = Session(new_directory, episodes, active_agent)
+        training_session = Session(new_directory, episodes, base_agent)
 
         training_session.run()
-
-        self.active_agent = active_agent
 
     def self_play(self,
                   episodes,
@@ -106,30 +105,33 @@ class Trainer:
                   ):
 
         if not agent:
-            agent = copy.deepcopy(self.base_agent)
+            agent = copy.deepcopy(self.agents[0])
             agent.load_model(agent_directory)
 
         agent_a = copy.deepcopy(agent)
         agent_a.epsilon = 0.25
-        agent_b = copy.deepcopy(agent)
-        agent_b.epsilon = 0.25
+        agent_a.epsilon_decay = 0.9995
+        agent_a.set(winner_reward, draw_reward, lose_reward, survive_reward)
+
+        agent_b = []
+        for n in range(len(self.agents)):
+            agent_b.append(copy.deepcopy(self.agents[n]))
+            agent_b[n].set(winner_reward, draw_reward, lose_reward, survive_reward)
+
+            if frozen:
+                agent_b[n].epsilon_min = 0
+                agent_b[n].epsilon = 0
+            else:
+                agent_b[n].epsilon = 0.25
 
         self.setup_trainer()
-        agent_a.set(winner_reward, draw_reward, lose_reward, survive_reward)
-        agent_b.set(winner_reward, draw_reward, lose_reward, survive_reward)
 
-        agent_a.epsilon_decay = 0.9995
-        if frozen:
-            agent_b.epsilon_min = 0
-            agent_b.epsilon = 0
-
-        new_directory = f"{self.directory}/{self.setup_training("self_play")}"
+        new_directory = f"{self.directory}/{self.setup_training("self_play", agent_a)}"
 
         training_session = Session(new_directory, episodes, agent_a, agent_b)
-
         training_session.run()
 
-        self.active_agent = agent_a
+        self.agents.append(agent_a)
 
     def full_training(self,
                       episodes,
@@ -143,7 +145,7 @@ class Trainer:
         self.base_model(episodes, winner_reward, draw_reward, lose_reward, survive_reward)
 
         for cycle in range(cycles):
-            self.self_play(int(episodes/cycles), self.active_agent, "", winner_reward, draw_reward, lose_reward, survive_reward)
+            self.self_play(int(episodes/4), self.agents[-1], "", winner_reward, draw_reward, lose_reward, survive_reward)
 
 if __name__ == "__main__":
     new_trainer = Trainer(hidden_size = 256,
@@ -158,4 +160,4 @@ if __name__ == "__main__":
 
     print(new_trainer.directory)
 
-    new_trainer.full_training(100000, 4)
+    new_trainer.full_training(100000, 10)
