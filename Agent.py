@@ -2,76 +2,92 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import random
-import numpy
+import numpy as numpy
 
+from VierGewinnt import VierGewinnt
 from collections import deque
 from LinearDQN import LinearDQN
 
+
+""" Die Agent Klasse verwaltet das Modell und beinhaltet alle Methoden für das Lernen und Handeln des Agenten """
 class Agent:
     def __init__(self,
-                 state_size = 42,
-                 action_size = 7,
-                 hidden_size = 256,
+                 state_size : int = 42,
+                 action_size : int = 7,
+                 hidden_size : int = 256,
 
-                 gamma = 0.95,
-                 epsilon = 1.0,
-                 epsilon_min = 0.01,
-                 epsilon_decay = 0.99995,
-                 learning_rate = 0.001,
-                 batch_size = 64,
+                 gamma : float = 0.95,
+                 epsilon : float = 1.0,
+                 epsilon_min : float = 0.01,
+                 epsilon_decay : float = 0.99995,
+                 learning_rate : float = 0.001,
+                 batch_size : int = 64,
 
-                 winner_reward = 1.0,
-                 draw_reward = 0.1,
-                 lose_reward = -1.0,
-                 survive_reward = 0.01
+                 winner_reward : float = 1.0,
+                 draw_reward : float = 0.1,
+                 lose_reward : float = -1.0,
+                 survive_reward : float = 0.01
                  ):
-        self.state_size = state_size
-        self.action_size = action_size
-        self.hidden_size = hidden_size
+        self.state_size : int = state_size
+        self.action_size : int = action_size
+        self.hidden_size : int = hidden_size
 
-        self.memory = deque(maxlen=100000)
+        self.memory : deque = deque(maxlen=100000)
 
-        self.gamma = gamma
-        self.epsilon = epsilon
-        self.epsilon_min = epsilon_min
-        self.epsilon_decay = epsilon_decay
-        self.learning_rate = learning_rate
-        self.batch_size = batch_size
+        self.gamma : float= gamma
+        self.epsilon : float = epsilon
+        self.epsilon_min : float = epsilon_min
+        self.epsilon_decay : float = epsilon_decay
+        self.learning_rate : float = learning_rate
+        self.batch_size : int = batch_size
 
-        self.model = LinearDQN(hidden_size)
-        self.target_model = LinearDQN(hidden_size)
+        self.model : nn.Module = LinearDQN(hidden_size)
+        self.target_model : nn.Module = LinearDQN(hidden_size)
         self.target_model.load_state_dict(self.model.state_dict())
         self.target_model.eval()
 
-        self.update_step = 1000
-        self.steps = 0
+        # Schrittweite in welcher target_model aktualisiert wird
+        self.update_step : int= 1000
+        self.steps : int = 0
 
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.criterion = nn.MSELoss()
+        self.optimizer : optim.Adam = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.criterion : nn.MSELoss = nn.MSELoss()
 
-        self.win_reward = winner_reward
-        self.draw_reward = draw_reward
-        self.lose_reward = lose_reward
-        self.survive_reward = survive_reward
+        self.win_reward : float = winner_reward
+        self.draw_reward : float = draw_reward
+        self.lose_reward : float = lose_reward
+        self.survive_reward : float = survive_reward
 
-        self.reward = 0
+        # gesammelter Reward innerhalb einer Episode
+        self.reward : float = 0.0
+        self.current_loss : float = 0.0
 
     def set(self,
-            win_reward,
-            draw_reward,
-            lose_reward,
-            survive_reward
+            win_reward : float,
+            draw_reward : float,
+            lose_reward : float,
+            survive_reward : float
             ):
         self.win_reward = win_reward
         self.draw_reward = draw_reward
         self.lose_reward = lose_reward
         self.survive_reward = survive_reward
 
-    def remember(self, state, action, reward, next_state, done):
+    """ Fügt der Erinnerung des Agenten einen weiteren Datensatz hinzu """
+    def remember(self,
+                 state : numpy.ndarray,
+                 action : int,
+                 reward : float,
+                 next_state : numpy.ndarray,
+                 done : bool):
         self.memory.append((state, action, reward, next_state, done))
 
-    def act(self, env):
-        state = env.get_state()
+    """ Act Methode wählt den nächsten Zug aus einer Liste an legalen Zügen auf dem Brett aus"""
+    def act(self, env : VierGewinnt) -> int:
+        state : numpy.ndarray = env.get_state()
+
+        # state Normalisierung: der Agent sieht das Spielbrett immer aus der Sicht von Spieler 1
+        # → dadurch muss der Agent nicht lernen zu unterscheiden welcher Spieler er ist
         if env.current_player == -1:
             state *= -1
 
@@ -80,26 +96,31 @@ class Agent:
         if not valid_moves:
             return 0
 
+        # exploration
         if numpy.random.rand() <= self.epsilon:
             return random.choice(valid_moves)
 
-        state_t = torch.FloatTensor(state).unsqueeze(0)
+        state_t : torch.Tensor = torch.FloatTensor(state).unsqueeze(0)
 
         with torch.no_grad():
             act_values = self.model(state_t)
 
         q_values = act_values[0].cpu().numpy().copy()
 
+        # illegale Züge erhalten einen Q-Wert in der negativen Unendlichkeit, da in Randerscheinungen im Training trotz einem vorher gewählten sehr niedrigen Wert illegale Züge gewählt wurden
         for c in range(7):
             if env.board[0, c] != 0:
                 q_values[c] = -numpy.inf
 
+        # wählt alle möglichen Aktionen mit dem gleichen Maximal vorausgesagtem Q-Wert als potenzielle Aktionen aus
         max_q = numpy.max(q_values)
         best_actions = [i for i, q in enumerate(q_values) if q == max_q]
 
         return random.choice(best_actions)
 
-    def correct_last_reward(self, reward):
+    """ Um den Agent klarer vom Environment zu trennen, wurde die Reward Logik aus der VierGewinnt  Klasse nach Episode verschoben.
+    Da in diesem Rahmen jeder überlebte Zug als survive_reward gewertet wird, muss nach Spielende die letzte Erinnerung überschrieben werden, um winner_reward etc zu verteilen"""
+    def correct_last_reward(self, reward : float):
         if self.memory:
             last_memory = list(self.memory[-1])
             last_memory[2] = reward
@@ -107,6 +128,7 @@ class Agent:
             self.memory[-1] = tuple(last_memory)
             self.reward += reward
 
+    """ in der replay Methode findet die Auswertung der letzten Episode statt"""
     def replay(self):
         if len(self.memory) < self.batch_size:
             return
@@ -140,11 +162,14 @@ class Agent:
         if self.steps % self.update_step == 0:
            self.target_model.load_state_dict(self.model.state_dict())
 
-    def save_model(self, path):
+        self.current_loss = loss.item()
+
+    """ nur model weights werden gespeichert/geladen, nicht ganzer Agent """
+    def save_model(self, path : str):
         torch.save(self.model.state_dict(), path)
         print(f"Modell gespeichert unter {path}")
 
-    def load_model(self, path):
+    def load_model(self, path : str):
         self.model.load_state_dict(torch.load(path))
         self.target_model.load_state_dict(self.model.state_dict())
         self.model.eval()

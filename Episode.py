@@ -4,13 +4,13 @@ from numpy import random
 
 class Episode:
     def __init__(self,
-                 env,
-                 agent_a,
-                 agent_b = None):
+                 env : VierGewinnt,
+                 agent_a : Agent,
+                 agent_b : Agent = None):
+        self.env = env
+
         self.agent_a = agent_a
         self.agent_b = agent_b
-
-        self.env = env
 
         self.game_states_str = []
 

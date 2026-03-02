@@ -1,8 +1,12 @@
 from VierGewinnt import VierGewinnt
 from Agent import Agent
 
+from logic import select_agent
+
 class Game:
-    def __init__(self, player1, player2):
+    def __init__(self,
+                 player1 : Agent | str = None,
+                 player2 : Agent | str = None):
         self.env = VierGewinnt()
 
         self.players = {1: player1, -1: player2}
@@ -11,6 +15,31 @@ class Game:
         self.score = {1 : 0,
                       -1 : 0
                       }
+
+    def select_player(self, player : str):
+        while True:
+            user_input = input(f"Spieler 1:\n1. KI\n2. Mensch\n> ")
+
+            if user_input == "1" or user_input.lower() == "ki":
+                selected_player = select_agent()
+                selected_player.epsilon = 0.1
+                break
+            elif user_input == "2" or user_input.lower() == "mensch":
+                selected_player = input("Namen eingeben\n> ")
+                break
+            else:
+                print("Option 1 oder 2 wählen.")
+
+        match player:
+            case "Spieler 1":
+                self.players[1] = selected_player
+
+            case "Spieler 2":
+                self.players[-1] = selected_player
+
+    def select_players(self):
+        self.select_player("Spieler 1")
+        self.select_player("Spieler 2")
 
     def show_score(self):
         for i in [1, -1]:
@@ -63,7 +92,10 @@ class Game:
             if not self.env.done:
                 self.env.current_player *= -1
 
-    def play(self):
+    def play(self) -> dict:
+        if not self.players[1] and not self.players[-1]:
+            self.select_players()
+
         self.env.reset()
         self.env.current_player = 1
 
@@ -78,9 +110,9 @@ class Game:
         while True:
             user_input = input(f"Wie geht es weiter? \n1. Neue Runde? \n2. Beenden?\n")
 
-            if user_input == "1" or user_input.lower == "neue runde":
-                self.play()
-            elif user_input == "2" or user_input.lower == "beenden":
+            if user_input == "1" or user_input.lower() == "neue runde":
+                return self.play()
+            elif user_input == "2" or user_input.lower() == "beenden":
                 return self.score
             else:
                 print("Option 1 oder 2 wählen.")
