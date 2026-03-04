@@ -9,8 +9,8 @@ from collections import deque
 from LinearDQN import LinearDQN
 
 
-""" Die Agent Klasse verwaltet das Modell und beinhaltet alle Methoden für das Lernen und Handeln des Agenten """
 class Agent:
+    """ Die Agent-Klasse verwaltet das DQN Modell und beinhaltet alle Methoden für das Lernen und Handeln des Agenten """
     def __init__(self,
                  state_size : int = 42,
                  action_size : int = 7,
@@ -51,7 +51,7 @@ class Agent:
         self.steps : int = 0
 
         self.optimizer : optim.Adam = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.criterion : nn.MSELoss = nn.MSELoss()
+        self.criterion : nn.SmoothL1Loss = nn.SmoothL1Loss()
 
         self.win_reward : float = winner_reward
         self.draw_reward : float = draw_reward
@@ -68,22 +68,23 @@ class Agent:
             lose_reward : float,
             survive_reward : float
             ):
+        """ Setzt die Belohnungs-werte des Agenten """
         self.win_reward = win_reward
         self.draw_reward = draw_reward
         self.lose_reward = lose_reward
         self.survive_reward = survive_reward
 
-    """ Fügt der Erinnerung des Agenten einen weiteren Datensatz hinzu """
     def remember(self,
                  state : numpy.ndarray,
                  action : int,
                  reward : float,
                  next_state : numpy.ndarray,
                  done : bool):
+        """ Fügt der Erinnerung des Agenten einen weiteren Datensatz hinzu. """
         self.memory.append((state, action, reward, next_state, done))
 
-    """ Act Methode wählt den nächsten Zug aus einer Liste an legalen Zügen auf dem Brett aus"""
     def act(self, env : VierGewinnt) -> int:
+        """ Die Methode wählt den nächsten Zug aus einer Liste an legalen Zügen auf dem Brett aus. """
         state : numpy.ndarray = env.get_state()
 
         # state Normalisierung: der Agent sieht das Spielbrett immer aus der Sicht von Spieler 1
@@ -121,6 +122,7 @@ class Agent:
     """ Um den Agent klarer vom Environment zu trennen, wurde die Reward Logik aus der VierGewinnt  Klasse nach Episode verschoben.
     Da in diesem Rahmen jeder überlebte Zug als survive_reward gewertet wird, muss nach Spielende die letzte Erinnerung überschrieben werden, um winner_reward etc zu verteilen"""
     def correct_last_reward(self, reward : float):
+        """ Korrigiert letzten Eintrag der Erinnerung. """
         if self.memory:
             last_memory = list(self.memory[-1])
             last_memory[2] = reward
@@ -128,8 +130,8 @@ class Agent:
             self.memory[-1] = tuple(last_memory)
             self.reward += reward
 
-    """ in der replay Methode findet die Auswertung der letzten Episode statt"""
     def replay(self):
+        """ In der Methode findet die Auswertung der letzten Episode statt. """
         if len(self.memory) < self.batch_size:
             return
 
@@ -152,6 +154,8 @@ class Agent:
 
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+
         self.optimizer.step()
 
         if self.epsilon > self.epsilon_min:
@@ -166,10 +170,12 @@ class Agent:
 
     """ nur model weights werden gespeichert/geladen, nicht ganzer Agent """
     def save_model(self, path : str):
+        """ Speichert die Model-Weights"""
         torch.save(self.model.state_dict(), path)
         print(f"Modell gespeichert unter {path}")
 
     def load_model(self, path : str):
+        """ Lädt und evaluiert die Model-Weights"""
         self.model.load_state_dict(torch.load(path))
         self.target_model.load_state_dict(self.model.state_dict())
         self.model.eval()

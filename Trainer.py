@@ -1,33 +1,27 @@
-import pandas
 import copy
 import os
 
-from VierGewinnt import VierGewinnt
 from Session import Session
 from Agent import Agent
-from logic import *
+from logic import next_directory
 
 class Trainer:
+    """ Verwaltet mehrere Trainings-sessions von Agenten mit gleichem DQN"""
     def __init__(self,
-                 hidden_size,
-                 state_size = 42,
-                 action_size = 7,
+                 hidden_size : int,
+                 state_size : int = 42,
+                 action_size : int  = 7,
 
-                 gamma = 0.95,
-                 epsilon = 1.0,
-                 epsilon_min = 0.01,
-                 epsilon_decay = 0.99995,
-                 learning_rate = 0.001,
-                 batch_size = 64,
+                 gamma : float = 0.95,
+                 epsilon : float = 1.0,
+                 epsilon_min : float = 0.01,
+                 epsilon_decay : float = 0.99995,
+                 learning_rate : float = 0.001,
+                 batch_size : int = 64,
 
-                 winner_reward = 1.0,
-                 draw_reward = 0.1,
-                 lose_reward = -1.0,
-                 survive_reward = 0.01,
-
-                 directory = next_directory("training", "trainer")
+                 directory : str  = next_directory("training", "trainer")
                  ):
-        self.agents = []
+        self.agents : list[Agent]= []
         self.agents.append(Agent(state_size,
                                 action_size,
                                 hidden_size,
@@ -38,16 +32,12 @@ class Trainer:
                                 epsilon_decay,
                                 learning_rate,
                                 batch_size,
+                                ))
 
-                                winner_reward,
-                                draw_reward,
-                                lose_reward,
-                                survive_reward))
-
-        self.directory = directory
-        self.log_data = []
+        self.directory : str = directory
 
     def setup_trainer(self):
+        """ Erstellt einen Trainer_n Ordner inklusive txt Datei mit DQN Attributen, falls nötig. """
         if not os.path.exists(f"training/{self.directory}"):
             os.mkdir(f"training/{self.directory}")
 
@@ -56,6 +46,7 @@ class Trainer:
                         f"hidden size = {self.agents[0].hidden_size}\n")
 
     def setup_training(self, training_type, agent):
+        """ Erstellt Ordner für aktuelle Trainingssession inklusive txt Datei mit Hyperparametern des Agenten"""
         new_directory = next_directory(f"training/{self.directory}", f"{training_type}_model")
 
         os.mkdir(f"training/{self.directory}/{new_directory}")
@@ -71,6 +62,7 @@ class Trainer:
 
         return new_directory
 
+    """ Basis Modell trainiert gegen Zufallsgegner, damit kein anderes fertiges Modell benötigt wird und weil Min-Max potentiell zu schwer wäre und Modell dauerhaft bestraft werden würde und somit kaum lernt """
     def base_model(self,
                    episodes,
 
@@ -79,6 +71,8 @@ class Trainer:
                    lose_reward = -1.0,
                    survive_reward = 0.01,
                    ):
+        """ Trainiert ein Model von Grund auf gegen einen Zufallsgegner (kein externes Modell nötig)"""
+        # agents[0] existiert immer, weil ein Agent im Konstruktor initialisiert wird
         base_agent = self.agents[0]
 
         self.setup_trainer()
@@ -90,48 +84,64 @@ class Trainer:
 
         training_session.run()
 
+    def league_play(self,
+                    episodes,
+
+                    agent = None,
+                    agent_directory = None,
+                    winner_reward=1.0,
+                    draw_reward=0.1,
+                    lose_reward=-1.0,
+                    survive_reward=0.01,
+                    ):
+        """ Agent trainiert gegen alle vorherigen finalen Modelle eines Trainingsprozesses """
+        if not agent:
+            agent = copy.deepcopy(self.agents[0])
+
+            if agent_directory:
+                agent.load_model(agent_directory)
+
+        agent_a = agent
+        agent_a.epsilon = 0.25
+        agent_a.epsilon_decay = 0.99995
+        agent_a.set(winner_reward, draw_reward, lose_reward, survive_reward)
+
+        agent_pool = []
+
+        for i in range(len(self.agents)):
+            agent_pool.append(copy.deepcopy(self.agents[i]))
+            agent_pool[i].set(winner_reward, draw_reward, lose_reward, survive_reward)
+
+            agent_pool[i].epsilon_min = 0
+            agent_pool[i].epsilon = 0
+
+        self.setup_trainer()
+
+        new_directory = f"{self.directory}/{self.setup_training("league_play", agent_a)}"
+
+        training_session = Session(new_directory, episodes, agent_a, agent_pool = agent_pool)
+        training_session.run()
+
+        # Agent wird den verwalteten Agents des Trainers hinzugefügt (nötig, weil agent_a eine deepcopy ist, anders als in base_training()
+        self.agents.append(agent_a)
+
     def self_play(self,
                   episodes,
 
-                  agent = None,
-                  agent_directory = "",
+                  agent_a=None,
+                  agent_a_directory=None,
+                  agent_b=None,
+                  agent_b_directory=None,
+
                   winner_reward=1.0,
                   draw_reward=0.1,
                   lose_reward=-1.0,
                   survive_reward=0.01,
-
-                  frozen = True
                   ):
+        """ Zu trainierender wird kopiert und spielt gegen sich selbst. Die kopierte Version darf potenziell auch lernen """
+        pass
 
-        if not agent:
-            agent = copy.deepcopy(self.agents[0])
-            agent.load_model(agent_directory)
-
-        agent_a = copy.deepcopy(agent)
-        agent_a.epsilon = 0.25
-        agent_a.epsilon_decay = 0.9995
-        agent_a.set(winner_reward, draw_reward, lose_reward, survive_reward)
-
-        agent_b = []
-        for n in range(len(self.agents)):
-            agent_b.append(copy.deepcopy(self.agents[n]))
-            agent_b[n].set(winner_reward, draw_reward, lose_reward, survive_reward)
-
-            if frozen:
-                agent_b[n].epsilon_min = 0
-                agent_b[n].epsilon = 0
-            else:
-                agent_b[n].epsilon = 0.25
-
-        self.setup_trainer()
-
-        new_directory = f"{self.directory}/{self.setup_training("self_play", agent_a)}"
-
-        training_session = Session(new_directory, episodes, agent_a, agent_b)
-        training_session.run()
-
-        self.agents.append(agent_a)
-
+    """ Für base- und league_training() entschieden, da nur base_training() gegen einen Menschen kaum eine chance hat und reines self play zu instabil werden kann """
     def full_training(self,
                       episodes,
                       cycles,
@@ -141,10 +151,11 @@ class Trainer:
                       lose_reward=-1.0,
                       survive_reward=0.01,
                       ):
+        """ Führt ein 'vollständiges Training' bestehend aus erst base- und dann league_training() durch, das ein einigermaßen kompetentes Modell erzeugt.  """
         self.base_model(episodes, winner_reward, draw_reward, lose_reward, survive_reward)
 
         for cycle in range(cycles):
-            self.self_play(int(episodes/4), self.agents[-1], "", winner_reward, draw_reward, lose_reward, survive_reward)
+            self.league_play(episodes/10, self.agents[-1], "", winner_reward, draw_reward, lose_reward, survive_reward)
 
 if __name__ == "__main__":
     new_trainer = Trainer(hidden_size = 256,
@@ -153,10 +164,13 @@ if __name__ == "__main__":
 
                           batch_size = 64,
                           epsilon_decay = 0.99995,
-
-                          survive_reward = 0.02,
     )
 
     print(new_trainer.directory)
 
-    new_trainer.full_training(100000, 10)
+    new_trainer.full_training(100000, 20,
+                              winner_reward=1.0,
+                              draw_reward=0.1,
+                              lose_reward=-1.0,
+                              survive_reward=-0.005
+                              )

@@ -1,23 +1,27 @@
-import pandas
 import numpy
 
 from VierGewinnt import VierGewinnt
 from Agent import Agent
-from logic import *
 from Episode import Episode
 from Logger import Logger
 
 
 class Session:
+    """ eine Session ist ein Trainingsablauf, sprich eine Reihe an beliebig vielen Trainingsspielen, welche unterschiedlich vielen Agenten benutzt werden kann """
     def __init__(self,
                  directory : str,
                  total_episodes : int,
                  agent_a : Agent,
-                 agent_b : list[Agent] = None
+                 agent_b : Agent = None,
+                 agent_pool : list[Agent] = None
                  ):
+        # Agent A wird prinzipiell immer als lernender Agent behandelt
         self.agent_a = agent_a
-        self.agent_b_pool = agent_b
-        self.current_agent_b_number  = None
+        # Agent B wird im fall Self Play auch als lernend behandelt
+        self.agent_b = agent_b
+        # Agentenpool lernt nicht
+        self.agent_pool = agent_pool
+        self.agent_pool_index = 0
 
         self.env = VierGewinnt()
         self.directory = directory
@@ -27,19 +31,20 @@ class Session:
 
         self.total_episodes = total_episodes
         self.current_episode_number = 0
-        self.current_episode = None
 
         self.current_game = []
 
         self.logger = Logger(directory)
 
     def learn(self):
+        """ lässt alle lernenden Agenten der Session lernen. """
         self.agent_a.replay()
 
-        if self.agent_b_pool and len(self.agent_b_pool) == 1 and self.agent_b_pool[0].epsilon != 0:
-            self.agent_b_pool[0].replay()
+        if self.agent_b:
+            self.agent_b.replay()
 
     def evaluate_agent(self, agent, num_test_games=100):
+        """ simuliert 100 Testspiele gegen einen Zufallsgegner, um als Benchmark für den Fortschritt zu dienen. """
         wins = 0
         draws = 0
         losses = 0
@@ -49,6 +54,7 @@ class Session:
 
         for i in range(num_test_games):
             self.env.reset()
+            self.env.current_player = 1
 
             while not self.env.done:
                 if self.env.current_player == 1:
@@ -77,16 +83,15 @@ class Session:
         return win_rate
 
     def run_episode(self):
-        if not self.agent_b_pool:
-            episode = Episode(self.env, self.agent_a)
+        """ führt eine einzige Episode komplett aus inklusive Speichern, lernen etc """
+        if self.agent_b:
+            episode = Episode(self.env, self.agent_a, self.agent_b)
+        # 10% Wahrscheinlichkeit gegen einen Zufallsgegner zu spielen, obwohl es einen Agentenpool gibt, um Overfitting zu vermindern
+        elif self.agent_pool and numpy.random.rand() > 0.1:
+            self.agent_pool_index = numpy.random.randint(len(self.agent_pool))
+            episode = Episode(self.env, self.agent_a, self.agent_pool[self.agent_pool_index])
         else:
-            if len(self.agent_b_pool) == 1:
-                self.current_agent_b_number = 0
-            else:
-                self.current_agent_b_number = numpy.random.randint(len(self.agent_b_pool))
-
-            agent_b = self.agent_b_pool[self.current_agent_b_number]
-            episode = Episode(self.env, self.agent_a, agent_b)
+            episode = Episode(self.env, self.agent_a)
 
         episode.run()
         self.current_game = episode.game_states_str
@@ -99,9 +104,8 @@ class Session:
         if self.current_episode_number % 100 == 0:
             new_win_rate_a = self.evaluate_agent(self.agent_a)
 
-            if self.agent_b_pool and len(self.agent_b_pool) == 1 and self.agent_b_pool[0].epsilon != 0:
-                agent_b = self.agent_b_pool[0]
-                new_win_rate_b = self.evaluate_agent(agent_b)
+            if self.agent_b:
+                new_win_rate_b = self.evaluate_agent(self.agent_b)
 
         self.logger.log_episode(self, new_win_rate_a, new_win_rate_b)
 
@@ -109,6 +113,7 @@ class Session:
         self.env.reset()
 
     def run(self):
+        """ führt die gesamte Session aus """
         while self.current_episode_number < self.total_episodes:
             self.run_episode()
             self.current_episode_number += 1

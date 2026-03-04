@@ -18,9 +18,9 @@ class Logger:
             print(f"Episode: {current_episode}/{total_episodes}, Score: {session.agent_a.reward}, Epsilon: {session.agent_a.epsilon:.2f}")
             self.save_replay(session)
 
-            if session.agent_b_pool and len(session.agent_b_pool) == 1 and session.agent_b_pool[0].epsilon != 0:
+            if session.agent_b:
                 session.agent_a.save_model(f"training/{self.directory}/checkpoints/agent_a_episode{current_episode}.pth")
-                session.agent_b_pool[0].save_model(f"training/{self.directory}/checkpoints/agent_b_episode{current_episode}.pth")
+                session.agent_b.save_model(f"training/{self.directory}/checkpoints/agent_b_episode{current_episode}.pth")
             else:
                 session.agent_a.save_model(f"training/{self.directory}/checkpoints/agent_episode{current_episode}.pth")
 
@@ -28,8 +28,9 @@ class Logger:
         current_episode = session.current_episode_number
 
         with open(f"training/{self.directory}/checkpoints/game_episode{current_episode}.txt", "x") as file:
-            if session.agent_b_pool:
-                file.write(f"Anzahl Agenten im Agentenpool: {len(session.agent_b_pool)}\n Aktueller Agent: {session.current_agent_b_number} \n")
+            if session.agent_pool:
+                file.write(f"Anzahl Agenten im Agentenpool: {len(session.agent_pool)}\n Aktueller Agent: {session.agent_pool_index} \n")
+
             for state in session.current_game:
                 file.write(f"{state}\n")
 
@@ -44,8 +45,8 @@ class Logger:
 
         if current_episode + 1 == total_episodes:
             session.agent_a.save_model(f"training/{self.directory}/final_agent_a_episode{total_episodes}.pth")
-            if session.agent_b_pool and len(session.agent_b_pool) == 1 and session.agent_b_pool[0].epsilon != 0:
-                session.agent_b_pool[0].save_model(f"training/{self.directory}/final_agent_b_episode{total_episodes}.pth")
+            if session.agent_b:
+                session.agent_b.save_model(f"training/{self.directory}/final_agent_b_episode{total_episodes}.pth")
 
     def log_episode(self, session, new_win_rate_a=None, new_win_rate_b=None):
         if new_win_rate_a:
@@ -59,15 +60,15 @@ class Logger:
             self.last_win_rate_a
         ])
 
-        if session.agent_b_pool and len(session.agent_b_pool) == 1:
+        if session.agent_b:
             if new_win_rate_b:
                 self.last_win_rate_b = new_win_rate_b
-            agent_b = session.agent_b_pool[0]
+
             self.log_data_b.append([
                 session.current_episode_number,
-                agent_b.reward,
-                agent_b.epsilon,
-                agent_b.current_loss,
+                session.agent_b.reward,
+                session.agent_b.epsilon,
+                session.agent_b.current_loss,
                 self.last_win_rate_b
             ])
 
