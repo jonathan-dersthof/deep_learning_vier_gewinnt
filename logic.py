@@ -55,9 +55,7 @@ def select_agent():
 
     dqn_attributes = get_attributes_from_file(f"{selected_trainer}/DQN_attributes")
 
-    agent = Agent(state_size=42,
-                  action_size=7,
-                  hidden_size=dqn_attributes["hidden size"])
+    agent = Agent(hidden_size = dqn_attributes["hidden size"])
     agent.load_model(f"{selected_agent}")
 
     return agent
@@ -77,6 +75,25 @@ def next_directory(directory, prefix):
         new_dir = f"{prefix}_{i}"
         return new_dir
 
+def select_value(prompt, default = None, value_type = None):
+    while True:
+        if default is not None:
+            user_input = input(f"{prompt} (Standardwert: {default}): ")
+        else:
+            user_input = input(prompt)
+
+        if value_type == "int":
+            try:
+                user_input = int(user_input)
+            except ValueError:
+                "Bitte Integer eingeben."
+        elif value_type == "float":
+            try:
+                user_input = float(user_input)
+            except ValueError:
+                "Bitte Float eingeben."
+
+        return user_input
 
 if __name__ == "__main__":
     print(next_directory("training/trainer_16", "base_model"))

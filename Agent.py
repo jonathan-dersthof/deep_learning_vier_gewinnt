@@ -12,8 +12,6 @@ from LinearDQN import LinearDQN
 class Agent:
     """ Die Agent-Klasse verwaltet das DQN Modell und beinhaltet alle Methoden für das Lernen und Handeln des Agenten """
     def __init__(self,
-                 state_size : int = 42,
-                 action_size : int = 7,
                  hidden_size : int = 256,
 
                  gamma : float = 0.95,
@@ -28,8 +26,6 @@ class Agent:
                  lose_reward : float = -1.0,
                  survive_reward : float = 0.01
                  ):
-        self.state_size : int = state_size
-        self.action_size : int = action_size
         self.hidden_size : int = hidden_size
 
         self.memory : deque = deque(maxlen=100000)
@@ -62,13 +58,27 @@ class Agent:
         self.reward : float = 0.0
         self.current_loss : float = 0.0
 
-    def set(self,
-            win_reward : float,
-            draw_reward : float,
-            lose_reward : float,
-            survive_reward : float
-            ):
-        """ Setzt die Belohnungs-werte des Agenten """
+    def set_hyperparameters(self,
+                            gamma: float,
+                            epsilon: float,
+                            epsilon_min: float,
+                            epsilon_decay: float,
+                            learning_rate: float,
+                            batch_size: int,
+
+                            win_reward: float,
+                            draw_reward: float,
+                            lose_reward: float,
+                            survive_reward: float
+                            ):
+        """ Setzt die Hyperparameter des Agenten neu"""
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
+        self.learning_rate = learning_rate
+        self.batch_size = batch_size
+
         self.win_reward = win_reward
         self.draw_reward = draw_reward
         self.lose_reward = lose_reward
@@ -120,7 +130,7 @@ class Agent:
         return random.choice(best_actions)
 
     """ Um den Agent klarer vom Environment zu trennen, wurde die Reward Logik aus der VierGewinnt  Klasse nach Episode verschoben.
-    Da in diesem Rahmen jeder überlebte Zug als survive_reward gewertet wird, muss nach Spielende die letzte Erinnerung überschrieben werden, um winner_reward etc zu verteilen"""
+    Da in diesem Rahmen jeder überlebte Zug als survive_reward gewertet wird, muss nach Spielende die letzte Erinnerung überschrieben werden, um win_reward etc zu verteilen"""
     def correct_last_reward(self, reward : float):
         """ Korrigiert letzten Eintrag der Erinnerung. """
         if self.memory:

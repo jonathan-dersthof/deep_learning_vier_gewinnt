@@ -3,6 +3,7 @@ from Agent import Agent
 
 from logic import select_agent
 
+
 class Game:
     def __init__(self,
                  player1 : Agent | str = None,
@@ -22,7 +23,7 @@ class Game:
 
             if user_input == "1" or user_input.lower() == "ki":
                 selected_player = select_agent()
-                selected_player.epsilon = 0.1
+                selected_player.epsilon = 0.0
                 break
             elif user_input == "2" or user_input.lower() == "mensch":
                 selected_player = input("Namen eingeben\n> ")

@@ -9,32 +9,15 @@ class Trainer:
     """ Verwaltet mehrere Trainings-sessions von Agenten mit gleichem DQN"""
     def __init__(self,
                  hidden_size : int,
-                 state_size : int = 42,
-                 action_size : int  = 7,
-
-                 gamma : float = 0.95,
-                 epsilon : float = 1.0,
-                 epsilon_min : float = 0.01,
-                 epsilon_decay : float = 0.99995,
-                 learning_rate : float = 0.001,
-                 batch_size : int = 64,
-
                  directory : str  = next_directory("training", "trainer")
                  ):
         self.agents : list[Agent]= []
-        self.agents.append(Agent(state_size,
-                                action_size,
-                                hidden_size,
+        self.agents.append(Agent(hidden_size = hidden_size))
 
-                                gamma,
-                                epsilon,
-                                epsilon_min,
-                                epsilon_decay,
-                                learning_rate,
-                                batch_size,
-                                ))
-
-        self.directory : str = directory
+        if directory.startswith("training"):
+            self.directory : str = directory[len("training"):]
+        else:
+            self.directory = directory
 
     def setup_trainer(self):
         """ Erstellt einen Trainer_n Ordner inklusive txt Datei mit DQN Attributen, falls nötig. """
@@ -63,20 +46,27 @@ class Trainer:
         return new_directory
 
     """ Basis Modell trainiert gegen Zufallsgegner, damit kein anderes fertiges Modell benötigt wird und weil Min-Max potentiell zu schwer wäre und Modell dauerhaft bestraft werden würde und somit kaum lernt """
-    def base_model(self,
-                   episodes,
+    def base_training(self,
+                      episodes,
 
-                   winner_reward = 1.0,
-                   draw_reward = 0.1,
-                   lose_reward = -1.0,
-                   survive_reward = 0.01,
-                   ):
+                      gamma: float = 0.95,
+                      epsilon: float = 1.0,
+                      epsilon_min: float = 0.01,
+                      epsilon_decay: float = 0.99995,
+                      learning_rate: float = 0.001,
+                      batch_size: int = 64,
+
+                      win_reward: float = 1.0,
+                      draw_reward: float = 0.1,
+                      lose_reward: float = -1.0,
+                      survive_reward: float = 0.01
+                      ):
         """ Trainiert ein Model von Grund auf gegen einen Zufallsgegner (kein externes Modell nötig)"""
         # agents[0] existiert immer, weil ein Agent im Konstruktor initialisiert wird
         base_agent = self.agents[0]
 
         self.setup_trainer()
-        base_agent.set(winner_reward, draw_reward, lose_reward, survive_reward)
+        base_agent.set_hyperparameters(gamma, epsilon, epsilon_min, epsilon_decay, learning_rate, batch_size, win_reward, draw_reward, lose_reward, survive_reward)
 
         new_directory = f"{self.directory}/{self.setup_training("base", base_agent)}"
 
@@ -89,10 +79,18 @@ class Trainer:
 
                     agent = None,
                     agent_directory = None,
-                    winner_reward=1.0,
-                    draw_reward=0.1,
-                    lose_reward=-1.0,
-                    survive_reward=0.01,
+
+                    gamma: float = 0.95,
+                    epsilon: float = 1.0,
+                    epsilon_min: float = 0.01,
+                    epsilon_decay: float = 0.99995,
+                    learning_rate: float = 0.001,
+                    batch_size: int = 64,
+
+                    win_reward: float = 1.0,
+                    draw_reward: float = 0.1,
+                    lose_reward: float = -1.0,
+                    survive_reward: float = 0.01
                     ):
         """ Agent trainiert gegen alle vorherigen finalen Modelle eines Trainingsprozesses """
         if not agent:
@@ -104,13 +102,12 @@ class Trainer:
         agent_a = agent
         agent_a.epsilon = 0.25
         agent_a.epsilon_decay = 0.99995
-        agent_a.set(winner_reward, draw_reward, lose_reward, survive_reward)
+        agent_a.set_hyperparameters(gamma, epsilon, epsilon_min, epsilon_decay, learning_rate, batch_size, win_reward, draw_reward, lose_reward, survive_reward)
 
         agent_pool = []
 
         for i in range(len(self.agents)):
             agent_pool.append(copy.deepcopy(self.agents[i]))
-            agent_pool[i].set(winner_reward, draw_reward, lose_reward, survive_reward)
 
             agent_pool[i].epsilon_min = 0
             agent_pool[i].epsilon = 0
@@ -133,10 +130,17 @@ class Trainer:
                   agent_b=None,
                   agent_b_directory=None,
 
-                  winner_reward=1.0,
-                  draw_reward=0.1,
-                  lose_reward=-1.0,
-                  survive_reward=0.01,
+                  gamma: float = 0.95,
+                  epsilon: float = 1.0,
+                  epsilon_min: float = 0.01,
+                  epsilon_decay: float = 0.99995,
+                  learning_rate: float = 0.001,
+                  batch_size: int = 64,
+
+                  win_reward: float = 1.0,
+                  draw_reward: float = 0.1,
+                  lose_reward: float = -1.0,
+                  survive_reward: float = 0.01
                   ):
         """ Zu trainierender wird kopiert und spielt gegen sich selbst. Die kopierte Version darf potenziell auch lernen """
         pass
@@ -146,30 +150,31 @@ class Trainer:
                       episodes,
                       cycles,
 
-                      winner_reward=1.0,
-                      draw_reward=0.1,
-                      lose_reward=-1.0,
-                      survive_reward=0.01,
+                      gamma: float = 0.95,
+                      epsilon: float = 1.0,
+                      epsilon_min: float = 0.01,
+                      epsilon_decay: float = 0.99995,
+                      learning_rate: float = 0.001,
+                      batch_size: int = 64,
+
+                      win_reward: float = 1.0,
+                      draw_reward: float = 0.1,
+                      lose_reward: float = -1.0,
+                      survive_reward: float = 0.01
                       ):
         """ Führt ein 'vollständiges Training' bestehend aus erst base- und dann league_training() durch, das ein einigermaßen kompetentes Modell erzeugt.  """
-        self.base_model(episodes, winner_reward, draw_reward, lose_reward, survive_reward)
+        self.base_training(episodes, gamma, epsilon, epsilon_min, epsilon_decay, learning_rate, batch_size, win_reward, draw_reward, lose_reward, survive_reward)
 
         for cycle in range(cycles):
-            self.league_play(episodes/10, self.agents[-1], "", winner_reward, draw_reward, lose_reward, survive_reward)
+            self.league_play(episodes / 10, self.agents[-1], "", gamma, epsilon, epsilon_min, epsilon_decay, learning_rate, batch_size, win_reward, draw_reward, lose_reward, survive_reward)
 
 if __name__ == "__main__":
-    new_trainer = Trainer(hidden_size = 256,
-                          state_size = 42,
-                          action_size = 7,
-
-                          batch_size = 64,
-                          epsilon_decay = 0.99995,
-    )
+    new_trainer = Trainer(hidden_size = 256)
 
     print(new_trainer.directory)
 
     new_trainer.full_training(100000, 20,
-                              winner_reward=1.0,
+                              win_reward=1.0,
                               draw_reward=0.1,
                               lose_reward=-1.0,
                               survive_reward=-0.005
