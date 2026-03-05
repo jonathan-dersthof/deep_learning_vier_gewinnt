@@ -119,3 +119,4 @@ class Session:
             self.current_episode_number += 1
 
         self.logger.save_logs_to_csv()
+        self.logger.plot()

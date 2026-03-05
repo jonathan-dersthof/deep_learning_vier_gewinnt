@@ -17,7 +17,7 @@ class Training:
                 break
             elif user_input == "2" or "neu" in user_input.lower():
                 selected_trainer = next_directory("training", "trainer")
-                hidden_size = select_value("hidden size wählen", int)
+                hidden_size = self.select_value_default("hidden size wählen", 256, "int")
                 break
             else:
                 print("Option 1 oder 2 wählen.")

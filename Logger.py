@@ -1,4 +1,8 @@
 import pandas
+import numpy as np
+import matplotlib.pyplot as plt
+
+from matplotlib.collections import LineCollection
 
 class Logger:
     def __init__(self, directory : str):
@@ -85,3 +89,67 @@ class Logger:
             data_frame_a.to_csv(f"training/{self.directory}/training_log.csv", index=False)
 
         print("Trainingssession beendet und Log gespeichert.")
+
+    @staticmethod
+    def plot_loss(data_frame, shape = (2, 2), location = (0, 0)):
+        ax = plt.subplot2grid(shape, location, xlabel="Episode", ylabel="Loss")
+        ax.plot(data_frame["Loss"], 'o', alpha=0.125, markersize=2, color='navy', label='Loss-Events')
+
+        mean = data_frame["Loss"].mean()
+        std = data_frame["Loss"].std()
+        threshold = mean + 3 * std
+
+        outliers = data_frame[data_frame["Loss"] > threshold]
+        ax.scatter(outliers.index, outliers["Loss"], color="crimson", s=10, label='Kritische Ausreißer')
+
+        smoothed_loss = data_frame["Loss"].rolling(window=100).mean()
+        ax.plot(smoothed_loss, color="navy", label="Loss Smooth")
+
+        ax.legend()
+
+    @staticmethod
+    def plot_win_rate(data_frame, shape = (2, 2), location = (1, 0)):
+        ax = plt.subplot2grid(shape, location, xlabel="Episode", ylabel="WinRate")
+        ax.plot(data_frame["WinRate"].iloc[::100], color="coral", alpha = 0.5, linestyle = "--", label="WinRate", marker="o", markersize=5)
+
+        x = np.arange(len(data_frame))
+        y = data_frame["WinRate"].values
+        m, b = np.polyfit(x, y, 1)
+        ax.plot(x, m * x + b, color="coral", label="Trend")
+
+        ax.legend()
+
+    @staticmethod
+    def plot_reward(data_frame, shape = (2, 2), location = (0, 1)):
+        ax = plt.subplot2grid(shape, location, rowspan=2)
+
+        ax.plot(data_frame["Reward"], 'o', alpha=0.125, markersize=2, color='teal', label='Reward-Events')
+
+        x = np.arange(len(data_frame))
+        y = data_frame["Reward"].values
+        m, b = np.polyfit(x, y, 1)
+        ax.plot(x, m * x + b, color="teal", label="Trend")
+
+        smoothed_loss = data_frame["Reward"].rolling(window=100).mean()
+        ax.plot(smoothed_loss, color="teal", alpha = 0.5, label="Reward Smooth")
+
+        ax.legend()
+
+    def plot(self, data_frame = None):
+        plt.figure(figsize=(20, 10))
+
+        if data_frame is None:
+            columns = ["Episode", "Reward", "Epsilon", "Loss", "WinRate"]
+            data_frame = pandas.DataFrame(self.log_data_a, columns=columns)
+
+        self.plot_loss(data_frame)
+        self.plot_win_rate(data_frame)
+        self.plot_reward(data_frame)
+
+        plt.tight_layout()
+        plt.savefig(f"{self.directory}/training_log.svg", format="svg")
+
+if __name__ == "__main__":
+    data = pandas.read_csv("training/trainer_24/league_play_model_19/training_log.csv")#
+    logger = Logger(directory="training/trainer_24/league_play_model_19")
+    logger.plot(data)

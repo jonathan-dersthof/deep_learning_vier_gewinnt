@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import random
-import numpy as numpy
+import numpy
 
 from VierGewinnt import VierGewinnt
 from collections import deque
