@@ -86,12 +86,12 @@ def select_value(prompt, default = None, value_type = None):
             try:
                 user_input = int(user_input)
             except ValueError:
-                "Bitte Integer eingeben."
+                print("Bitte Integer eingeben.")
         elif value_type == "float":
             try:
                 user_input = float(user_input)
             except ValueError:
-                "Bitte Float eingeben."
+                print("Bitte Float eingeben.")
 
         return user_input
 

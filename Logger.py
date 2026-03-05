@@ -147,9 +147,9 @@ class Logger:
         self.plot_reward(data_frame)
 
         plt.tight_layout()
-        plt.savefig(f"{self.directory}/training_log.svg", format="svg")
+        plt.savefig(f"training/{self.directory}/training_log.svg", format="svg")
 
 if __name__ == "__main__":
-    data = pandas.read_csv("training/trainer_24/league_play_model_19/training_log.csv")#
-    logger = Logger(directory="training/trainer_24/league_play_model_19")
+    data = pandas.read_csv("training/trainer_25/league_play_model_19/training_log.csv")#
+    logger = Logger(directory="trainer_25/league_play_model_19")
     logger.plot(data)
