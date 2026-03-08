@@ -4,12 +4,14 @@ from Agent import Agent
 
 
 class Training:
+    """ Nutzergesteuertes Training """
     def __init__(self):
-        self.trainer = None
+        self.trainer : Trainer | None = None
 
     def setup(self):
+        """ Lässt alten Trainer auswählen oder neuen Erstellen """
         while True:
-            user_input = input(f"Trainer wählen oder neuen Trainer erstellen?:\n1. Trainer Wählen\n2. Neuer Trainer\n> ")
+            user_input : str = input(f"Trainer wählen oder neuen Trainer erstellen?:\n1. Trainer Wählen\n2. Neuer Trainer\n> ")
 
             if user_input == "1" or "wählen" in user_input.lower():
                 selected_trainer = select_path("training", "trainer_")
@@ -17,7 +19,7 @@ class Training:
                 break
             elif user_input == "2" or "neu" in user_input.lower():
                 selected_trainer = next_directory("training", "trainer")
-                hidden_size = self.select_value_default("hidden size wählen", 256, "int")
+                hidden_size = select_value("hidden size wählen", 256, "int")
                 break
             else:
                 print("Option 1 oder 2 wählen.")
@@ -27,28 +29,22 @@ class Training:
                                )
 
     @staticmethod
-    def select_value_default(prompt, default = None, value_type = None):
-        user_input = select_value(prompt, default = default, value_type = value_type)
+    def get_hyperparameters() -> dict:
+        """ Lässt alle Hyperparameter für Agenten festlegen und gibt Standardwerte als Referenz an """
+        default_agent : Agent = Agent()
 
-        if user_input:
-            return user_input
-        else:
-            return default
-
-    def get_hyperparameters(self):
-        default_agent = Agent()
         print("Hyperparameter festlegen: ")
-        epsilon = self.select_value_default("Epsilon", default = default_agent.epsilon, value_type = "float")
-        epsilon_min = self.select_value_default("Minimalwert für Epsilon (epsilon_min)", default = default_agent.epsilon_min, value_type = "float")
-        epsilon_decay = self.select_value_default("Epsilon Verfallsrate (epsilon_decay)", default = default_agent.epsilon_decay, value_type = "float")
-        learning_rate = self.select_value_default("Lernrate (learning_rate)", default = default_agent.learning_rate, value_type = "float")
-        batch_size = self.select_value_default("Lernrate (learning_rate)", default = default_agent.batch_size, value_type = "int")
+        epsilon : float = select_value("Epsilon", default = default_agent.epsilon, value_type = "float")
+        epsilon_min : float = select_value("Minimalwert für Epsilon (epsilon_min)", default = default_agent.epsilon_min, value_type = "float")
+        epsilon_decay : float = select_value("Epsilon Verfallsrate (epsilon_decay)", default = default_agent.epsilon_decay, value_type = "float")
+        learning_rate : float = select_value("Lernrate (learning_rate)", default = default_agent.learning_rate, value_type = "float")
+        batch_size : int = select_value("Losgröße (batch_size)", default = default_agent.batch_size, value_type = "int")
 
         print("Belohnungen festlegen für: ")
-        win_reward = self.select_value_default("Sieg(win_reward)", default = default_agent.win_reward, value_type = "float")
-        draw_reward = self.select_value_default("Unentschieden (draw_reward)", default = default_agent.draw_reward, value_type = "float")
-        lose_reward = self.select_value_default("Niederlage (lose_reward)", default = default_agent.lose_reward, value_type = "float")
-        survive_reward = self.select_value_default("Überleben (survive_reward)", default = default_agent.survive_reward, value_type = "float")
+        win_reward : float  = select_value("Sieg(win_reward)", default = default_agent.win_reward, value_type = "float")
+        draw_reward : float = select_value("Unentschieden (draw_reward)", default = default_agent.draw_reward, value_type = "float")
+        lose_reward : float = select_value("Niederlage (lose_reward)", default = default_agent.lose_reward, value_type = "float")
+        survive_reward : float = select_value("Überleben (survive_reward)", default = default_agent.survive_reward, value_type = "float")
 
         return {
             "epsilon" : epsilon,
@@ -63,10 +59,11 @@ class Training:
             }
 
     @staticmethod
-    def select_training():
+    def select_training() -> str :
+        """ Lässt Nutzer Trainingsart festlegen"""
         while True:
             while True:
-                user_input = input(f"Training Wählen:\n1. Basistraining\n2. Self-play\n3. League-play\n4. Volles Training\n> ")
+                user_input: str = input(f"Training Wählen:\n1. Basistraining\n2. Self-play\n3. League-play\n4. Volles Training\n> ")
 
                 if user_input == "1" or "basis" in user_input.lower():
                     return "base_training"
@@ -80,12 +77,13 @@ class Training:
                     print("Option 1 - 4 wählen.")
 
     def train(self):
+        """ Gesamter Ablauf des Nutzergesteuerten Trainings """
         if not self.trainer:
             self.setup()
 
-        selected_training = self.select_training()
-        hyperparameters = self.get_hyperparameters()
-        episodes = select_value("Episodenanzahl festlegen: ", value_type = "int")
+        selected_training : str = self.select_training()
+        hyperparameters : dict = self.get_hyperparameters()
+        episodes : int = select_value("Episodenanzahl festlegen: ", value_type = "int")
 
         match selected_training:
             case "base_training":
@@ -93,10 +91,10 @@ class Training:
             case "self_play":
                 self.trainer.self_play(episodes, **hyperparameters)
             case "league_play":
-                agent_a = select_agent()
+                agent_a : Agent = select_agent()
                 self.trainer.league_play(episodes, agent_a, None, **hyperparameters)
             case "full_training":
-                cycles = select_value("Anzahl an Trainingswiederholungen (cycles) festlegen: ", value_type = "int")
+                cycles : int = select_value("Anzahl an Trainingswiederholungen (cycles) festlegen: ", value_type = "int")
                 self.trainer.full_training(episodes, cycles, **hyperparameters)
 
 if __name__ == "__main__":

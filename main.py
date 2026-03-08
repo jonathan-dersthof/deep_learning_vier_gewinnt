@@ -3,7 +3,7 @@ from Training import Training
 
 def main():
     while True:
-        user_input = input(f"Möchtest du ein Modell trainieren oder spielen?:\n1. spielen\n2. trainieren\n> ")
+        user_input : str = input(f"Möchtest du ein Modell trainieren oder spielen?:\n1. spielen\n2. trainieren\n> ")
 
         if user_input == "1" or "sp" in user_input.lower():
             game = Game()
