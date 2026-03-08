@@ -1,9 +1,11 @@
 import copy
 import os
+import pandas
 
 from Session import Session
 from Agent import Agent
 from logic import next_directory
+from Logger import Logger
 
 class Trainer:
     """ Verwaltet mehrere Trainings-sessions von Agenten mit gleichem DQN"""
@@ -74,6 +76,8 @@ class Trainer:
 
         training_session.run()
 
+        return training_session.logger.log_data_a
+
     def league_play(self,
                     episodes,
 
@@ -122,6 +126,8 @@ class Trainer:
         # Agent wird den verwalteten Agents des Trainers hinzugefügt (nötig, weil agent_a eine deepcopy ist, anders als in base_training()
         self.agents.append(agent_a)
 
+        return training_session.logger.log_data_a
+
     def self_play(self,
                   episodes,
 
@@ -163,17 +169,23 @@ class Trainer:
                       survive_reward: float = 0.01
                       ):
         """ Führt ein 'vollständiges Training' bestehend aus erst base- und dann league_training() durch, das ein einigermaßen kompetentes Modell erzeugt.  """
-        self.base_training(episodes, gamma, epsilon, epsilon_min, epsilon_decay, learning_rate, batch_size, win_reward, draw_reward, lose_reward, survive_reward)
+        logger = Logger(self.directory)
+
+        columns = ["Episode", "Reward", "Epsilon", "Loss", "WinRate"]
+        data = [pandas.DataFrame(self.base_training(episodes, gamma, epsilon, epsilon_min, epsilon_decay, learning_rate, batch_size, win_reward, draw_reward, lose_reward, survive_reward), columns=columns)]
 
         for cycle in range(cycles):
-            self.league_play(episodes / 10, self.agents[-1], "", gamma, epsilon, epsilon_min, epsilon_decay, learning_rate, batch_size, win_reward, draw_reward, lose_reward, survive_reward)
+           data.append(pandas.DataFrame(self.league_play(int((cycle + 1) * (episodes / 10)), self.agents[-1], "", gamma, epsilon, epsilon_min, epsilon_decay, learning_rate, batch_size, win_reward, draw_reward, lose_reward, survive_reward), columns=columns))
+
+        combined_data = pandas.concat(data, ignore_index=True)
+        logger.plot_overview(combined_data)
 
 if __name__ == "__main__":
     new_trainer = Trainer(hidden_size = 256)
 
     print(new_trainer.directory)
 
-    new_trainer.full_training(100000, 20,
+    new_trainer.full_training(100000, 5,
                               win_reward=1.0,
                               draw_reward=0.1,
                               lose_reward=-1.0,

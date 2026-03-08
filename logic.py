@@ -94,6 +94,3 @@ def select_value(prompt, default = None, value_type = None):
                 print("Bitte Float eingeben.")
 
         return user_input
-
-if __name__ == "__main__":
-    print(next_directory("training/trainer_16", "base_model"))

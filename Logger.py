@@ -2,7 +2,6 @@ import pandas
 import numpy as np
 import matplotlib.pyplot as plt
 
-from matplotlib.collections import LineCollection
 
 class Logger:
     def __init__(self, directory : str):
@@ -92,51 +91,98 @@ class Logger:
 
     @staticmethod
     def plot_loss(data_frame, shape = (2, 2), location = (0, 0)):
-        ax = plt.subplot2grid(shape, location, xlabel="Episode", ylabel="Loss")
-        ax.plot(data_frame["Loss"], 'o', alpha=0.125, markersize=2, color='navy', label='Loss-Events')
+        ax = plt.subplot2grid(shape, location, xlabel="Episode", ylabel="Loss", title="Loss Graph")
+        ax.plot(data_frame["Loss"],
+                'o',
+                markersize = 2,
+                color = 'navy',
+                alpha = 1000 / len(data_frame) if len(data_frame) > 1000 else 1,
+                label = 'Loss-Events'
+                )
 
         mean = data_frame["Loss"].mean()
         std = data_frame["Loss"].std()
         threshold = mean + 3 * std
 
         outliers = data_frame[data_frame["Loss"] > threshold]
-        ax.scatter(outliers.index, outliers["Loss"], color="crimson", s=10, label='Kritische Ausreißer')
+        ax.scatter(outliers.index,
+                   outliers["Loss"],
+                   s = 10,
+                   color = "crimson",
+                   alpha = 10000/len(data_frame) if len(data_frame) > 10000 else 1,
+                   label = 'Kritische Ausreißer'
+                   )
 
-        smoothed_loss = data_frame["Loss"].rolling(window=100).mean()
-        ax.plot(smoothed_loss, color="navy", label="Loss Smooth")
+        smoothed_loss = data_frame["Loss"].rolling(window = 100).mean()
+        ax.plot(smoothed_loss,
+                color = "navy",
+                label = "Loss Smooth"
+                )
 
         ax.legend()
 
     @staticmethod
     def plot_win_rate(data_frame, shape = (2, 2), location = (1, 0)):
-        ax = plt.subplot2grid(shape, location, xlabel="Episode", ylabel="WinRate")
-        ax.plot(data_frame["WinRate"].iloc[::100], color="coral", alpha = 0.5, linestyle = "--", label="WinRate", marker="o", markersize=5)
+        ax = plt.subplot2grid(shape, location, xlabel = "Episode", ylabel = "WinRate", ylim = (0, 1), title="Win Rate Graph")
 
+        # Nur jeden 100. Datenpunkt plotten, da nur alle 100 Episoden WinRate berechnet wird
+        ax.plot(data_frame["WinRate"].iloc[::100],
+                linestyle="--",
+                marker="o",
+                markersize=5,
+                color = "coral",
+                alpha = 0.5,
+                label = "WinRate"
+                )
+
+        # Durchschnittsgerade
         x = np.arange(len(data_frame))
         y = data_frame["WinRate"].values
         m, b = np.polyfit(x, y, 1)
-        ax.plot(x, m * x + b, color="coral", label="Trend")
+        ax.plot(x,
+                m * x + b,
+                color = "coral",
+                label = "Trend"
+                )
 
         ax.legend()
 
     @staticmethod
-    def plot_reward(data_frame, shape = (2, 2), location = (0, 1)):
-        ax = plt.subplot2grid(shape, location, rowspan=2)
+    def plot_epsilon(data_frame, shape = (2, 2), location = (1, 0)):
+        ax = plt.subplot2grid(shape, location, xlabel="Episode", ylabel="Epsilon")
 
-        ax.plot(data_frame["Reward"], 'o', alpha=0.125, markersize=2, color='teal', label='Reward-Events')
+    @staticmethod
+    def plot_reward(data_frame, shape = (2, 2), location = (0, 1), row = 2):
+        ax = plt.subplot2grid(shape, location, rowspan = row, xlabel="Episode", ylabel="Reward", title="Reward Graph")
+
+        ax.plot(data_frame["Reward"],
+                "o",
+                markersize = 2,
+                color = "teal",
+                alpha = 0.125,
+                label = "Reward-Events"
+                )
 
         x = np.arange(len(data_frame))
         y = data_frame["Reward"].values
         m, b = np.polyfit(x, y, 1)
-        ax.plot(x, m * x + b, color="teal", label="Trend")
+        ax.plot(x,
+                m * x + b,
+                color = "teal",
+                label = "Trend"
+                )
 
-        smoothed_loss = data_frame["Reward"].rolling(window=100).mean()
-        ax.plot(smoothed_loss, color="teal", alpha = 0.5, label="Reward Smooth")
+        smoothed_loss = data_frame["Reward"].rolling(window = 100).mean()
+        ax.plot(smoothed_loss,
+                color = "teal",
+                alpha = 0.5,
+                label = "Reward Smooth"
+                )
 
         ax.legend()
 
-    def plot(self, data_frame = None):
-        plt.figure(figsize=(20, 10))
+    def plot(self, data_frame = None, name = ""):
+        plt.figure(figsize = (20, 10))
 
         if data_frame is None:
             columns = ["Episode", "Reward", "Epsilon", "Loss", "WinRate"]
@@ -146,10 +192,46 @@ class Logger:
         self.plot_win_rate(data_frame)
         self.plot_reward(data_frame)
 
+        if name != "":
+            name = f"_{name}"
+
         plt.tight_layout()
-        plt.savefig(f"training/{self.directory}/training_log.svg", format="svg")
+        plt.savefig(f"training/{self.directory}/training_log{name}.svg", format="svg")
+        plt.savefig(f"training/{self.directory}/training_log{name}.png", format="png")
+
+        plt.close()
+
+    def plot_overview(self, data_frame = None, name = ""):
+        plt.figure(figsize=(20, 10))
+
+        self.plot_loss(data_frame, shape = (4, 1), location = (0, 0))
+        self.plot_win_rate(data_frame, shape = (4, 1), location = (1, 0))
+        self.plot_reward(data_frame, shape = (4, 1), location = (2, 0))
+
+        if name != "":
+            name = f"_{name}"
+
+        plt.tight_layout()
+        plt.savefig(f"training/{self.directory}/training_overview{name}.svg", format="svg")
+        plt.savefig(f"training/{self.directory}/training_overview{name}.png", format="png")
+
+        plt.close()
 
 if __name__ == "__main__":
-    data = pandas.read_csv("training/trainer_25/league_play_model_19/training_log.csv")#
-    logger = Logger(directory="trainer_25/league_play_model_19")
-    logger.plot(data)
+    logger = Logger(directory="trainer_26/base_model_1")
+
+    old_data = pandas.read_csv("training/trainer_26/base_model/training_log.csv")
+
+    data = [pandas.read_csv("training/trainer_26/base_model/training_log.csv"),
+            pandas.read_csv("training/trainer_26/league_play_model/training_log.csv"),
+            pandas.read_csv("training/trainer_26/league_play_model_1/training_log.csv")
+            ]
+
+    new_data = pandas.concat(data, ignore_index=True)
+
+
+
+    #logger.plot(data)
+    logger.plot_overview(old_data)
+    logger.plot_overview(new_data)
+

@@ -26,9 +26,6 @@ class Session:
         self.env = VierGewinnt()
         self.directory = directory
 
-        self.log_data_a = []
-        self.log_data_b = []
-
         self.total_episodes = total_episodes
         self.current_episode_number = 0
 
