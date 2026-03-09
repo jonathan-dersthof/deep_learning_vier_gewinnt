@@ -28,7 +28,7 @@ class Agent:
                  ):
         self.hidden_size : int = hidden_size
 
-        self.memory : deque = deque(maxlen=100000)
+        self.memory : deque = deque(maxlen = 100000)
 
         self.gamma : float= gamma
         self.epsilon : float = epsilon

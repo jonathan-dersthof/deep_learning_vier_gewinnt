@@ -242,7 +242,7 @@ class Logger:
         plt.close()
 
 if __name__ == "__main__":
-    logger = Logger(directory="trainer_26/base_model")
+    """logger = Logger(directory="trainer_26/base_model")
 
     old_data = pandas.read_csv("training/trainer_26/base_model/training_log.csv")
 
@@ -257,4 +257,12 @@ if __name__ == "__main__":
 
     #logger.plot(data)
     logger.plot_overview(new_data)
+    """
+    logger = Logger(directory="trainer_34/self_play_model")
+    columns = ["Episode", "Reward", "Epsilon", "Loss", "WinRate"]
 
+    data_a = pandas.read_csv("training/trainer_34/self_play_model/training_log_a.csv")
+    logger.plot(data_a, "a")
+
+    data_b = pandas.read_csv("training/trainer_34/self_play_model/training_log_b.csv")
+    logger.plot(data_b, "b")

@@ -29,11 +29,12 @@ class Training:
                                )
 
     @staticmethod
-    def get_hyperparameters() -> dict:
+    def get_hyperparameters(extension = "") -> dict:
         """ Lässt alle Hyperparameter für Agenten festlegen und gibt Standardwerte als Referenz an """
         default_agent : Agent = Agent()
 
         print("Hyperparameter festlegen: ")
+        gamma : float = select_value("Gamma", default = default_agent.gamma, value_type = "float")
         epsilon : float = select_value("Epsilon", default = default_agent.epsilon, value_type = "float")
         epsilon_min : float = select_value("Minimalwert für Epsilon (epsilon_min)", default = default_agent.epsilon_min, value_type = "float")
         epsilon_decay : float = select_value("Epsilon Verfallsrate (epsilon_decay)", default = default_agent.epsilon_decay, value_type = "float")
@@ -46,16 +47,19 @@ class Training:
         lose_reward : float = select_value("Niederlage (lose_reward)", default = default_agent.lose_reward, value_type = "float")
         survive_reward : float = select_value("Überleben (survive_reward)", default = default_agent.survive_reward, value_type = "float")
 
+        if extension != "":
+            extension : str = "_" + extension
         return {
-            "epsilon" : epsilon,
-            "epsilon_min" : epsilon_min,
-            "epsilon_decay" : epsilon_decay,
-            "learning_rate" : learning_rate,
-            "batch_size" : batch_size,
-            "win_reward" : win_reward,
-            "draw_reward" : draw_reward,
-            "lose_reward" : lose_reward,
-            "survive_reward" : survive_reward
+            f"gamma{extension}" : gamma,
+            f"epsilon{extension}" : epsilon,
+            f"epsilon_min{extension}" : epsilon_min,
+            f"epsilon_decay{extension}" : epsilon_decay,
+            f"learning_rate{extension}" : learning_rate,
+            f"batch_size{extension}" : batch_size,
+            f"win_reward{extension}" : win_reward,
+            f"draw_reward{extension}" : draw_reward,
+            f"lose_reward{extension}" : lose_reward,
+            f"survive_reward{extension}" : survive_reward
             }
 
     @staticmethod
@@ -89,7 +93,16 @@ class Training:
             case "base_training":
                 self.trainer.base_training(episodes, **hyperparameters)
             case "self_play":
-                self.trainer.self_play(episodes, **hyperparameters)
+                agent_a : Agent = select_agent()
+                agent_b : Agent = select_agent()
+
+                for key in hyperparameters.keys():
+                    key += "_a"
+
+                print("Hyperparameter für Agent B:")
+                hyperparameters_b: dict = self.get_hyperparameters("b")
+
+                self.trainer.self_play(episodes, agent_a = agent_a, agent_b = agent_b, **hyperparameters, **hyperparameters_b)
             case "league_play":
                 agent_a : Agent = select_agent()
                 self.trainer.league_play(episodes, agent_a, None, **hyperparameters)

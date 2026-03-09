@@ -1,4 +1,5 @@
 import numpy
+import pandas
 
 from VierGewinnt import VierGewinnt
 from Agent import Agent
@@ -116,4 +117,14 @@ class Session:
             self.current_episode_number += 1
 
         self.logger.save_logs_to_csv()
-        self.logger.plot()
+
+        columns = ["Episode", "Reward", "Epsilon", "Loss", "WinRate"]
+        data_a = pandas.DataFrame(self.logger.log_data_a, columns = columns)
+
+        if self.agent_b:
+            data_b = pandas.DataFrame(self.logger.log_data_b, columns = columns)
+
+            self.logger.plot(data_a, "a")
+            self.logger.plot(data_b, "b")
+        else:
+            self.logger.plot(data_a)
