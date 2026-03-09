@@ -126,5 +126,7 @@ class Session:
 
             self.logger.plot(data_a, "a")
             self.logger.plot(data_b, "b")
+
+            self.logger.plot_comparison(data_a, data_b)
         else:
             self.logger.plot(data_a)

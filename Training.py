@@ -96,9 +96,6 @@ class Training:
                 agent_a : Agent = select_agent()
                 agent_b : Agent = select_agent()
 
-                for key in hyperparameters.keys():
-                    key += "_a"
-
                 print("Hyperparameter für Agent B:")
                 hyperparameters_b: dict = self.get_hyperparameters("b")
 

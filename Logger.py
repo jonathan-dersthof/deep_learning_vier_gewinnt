@@ -241,6 +241,25 @@ class Logger:
 
         plt.close()
 
+    def plot_comparison(self, data_a : pandas.DataFrame, data_b : pandas.DataFrame):
+        plt.figure(figsize=(20, 40))  # auch Höhe anpassen
+
+        self.plot_loss(data_a, shape=(8, 1), location=(0, 0))
+        self.plot_loss(data_b, shape=(8, 1), location=(1, 0))
+
+        self.plot_win_rate(data_a, shape=(8, 1), location=(2, 0))
+        self.plot_win_rate(data_b, shape=(8, 1), location=(3, 0))
+
+        self.plot_reward(data_a, shape=(8, 1), location=(4, 0), epsilon=True)
+        self.plot_reward(data_b, shape=(8, 1), location=(6, 0), epsilon=True)
+
+        plt.tight_layout()
+
+        plt.savefig(f"training/{self.directory}/training_comparison.svg", format="svg")
+        plt.savefig(f"training/{self.directory}/training_comparison.png", format="png", facecolor='white', transparent=False)
+
+        plt.close()
+
 if __name__ == "__main__":
     """logger = Logger(directory="trainer_26/base_model")
 
@@ -262,7 +281,9 @@ if __name__ == "__main__":
     columns = ["Episode", "Reward", "Epsilon", "Loss", "WinRate"]
 
     data_a = pandas.read_csv("training/trainer_34/self_play_model/training_log_a.csv")
-    logger.plot(data_a, "a")
+    #logger.plot(data_a, "a")
 
     data_b = pandas.read_csv("training/trainer_34/self_play_model/training_log_b.csv")
-    logger.plot(data_b, "b")
+    #logger.plot(data_b, "b")
+
+    logger.plot_comparison(data_a, data_b)
