@@ -13,7 +13,7 @@ class Episode:
         self.env : VierGewinnt = env
 
         self.agent_a : Agent = agent_a
-        self.agent_b : Agent = agent_b
+        self.agent_b : Agent | None = agent_b
 
         self.game_states_str : list[str] = []
 

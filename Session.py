@@ -41,7 +41,7 @@ class Session:
         if self.agent_b:
             self.agent_b.replay()
 
-    def evaluate_agent(self, agent : Agent, num_test_games : int = 100):
+    def evaluate_agent(self, agent : Agent, num_test_games : int = 100) -> float:
         """ simuliert 100 Testspiele gegen einen Zufallsgegner, um als Benchmark für den Fortschritt zu dienen. """
         wins : int = 0
         draws : int = 0

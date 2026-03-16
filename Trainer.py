@@ -11,11 +11,14 @@ class Trainer:
     """ Verwaltet mehrere Trainings-sessions von Agenten mit gleichem DQN"""
     def __init__(self,
                  hidden_size : int,
-                 directory : str  = next_directory("training", "trainer")
+                 directory : str | None = None
                  ):
+        if directory is None:
+            directory = next_directory("training", "trainer")
+
         self.hidden_size : int = hidden_size
 
-        self.agents : list[Agent]= []
+        self.agents : list[Agent] = []
         self.agents.append(Agent(hidden_size = hidden_size))
 
         if directory.startswith("training"):
@@ -45,11 +48,18 @@ class Trainer:
 
         with open(f"training/{self.directory}/{new_directory}/agent{name}_attributes", "x") as file:
             file.write(f"Agent{name} attributes\n"
-                    f"winner reward = {agent.win_reward}\n"
-                    f"draw reward = {agent.draw_reward}\n"
-                    f"lose_reward =  {agent.lose_reward}\n"
-                    f"survive_reward = {agent.survive_reward}"
-                    )
+                       f"gamma = {agent.gamma}\n"
+                       f"epsilon = {agent.epsilon}\n"
+                       f"epsilon_min = {agent.epsilon_min}\n"
+                       f"epsilon_decay = {agent.epsilon_decay}\n"
+                       f"learning_rate = {agent.learning_rate}\n"
+                       f"batch_size = {agent.batch_size}\n"
+
+                       f"win_reward = {agent.win_reward}\n"
+                       f"draw_reward = {agent.draw_reward}\n"
+                       f"lose_reward =  {agent.lose_reward}\n"
+                       f"survive_reward = {agent.survive_reward}"
+                       )
 
         return new_directory
 
@@ -228,14 +238,256 @@ class Trainer:
         combined_data : pandas.DataFrame = pandas.concat(data, ignore_index=True)
         logger.plot_overview(combined_data)
 
+# Vollständiges Training für Facharbeit
 if __name__ == "__main__":
-    new_trainer = Trainer(hidden_size = 256)
+    """trainer1 = Trainer(hidden_size = 256)
 
-    print(new_trainer.directory)
+    trainer1.full_training(100000, 20,
+                           gamma = 0.95,
+                           epsilon = 1.0,
+                           epsilon_min = 0.01,
+                           epsilon_decay = 0.99995,
+                           learning_rate = 0.001,
+                           batch_size = 64,
 
-    new_trainer.full_training(100000, 5,
-                              win_reward=1.0,
-                              draw_reward=0.1,
-                              lose_reward=-1.0,
-                              survive_reward=-0.005
-                              )
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=-0.005
+                           )"""
+
+    trainer2 = Trainer(hidden_size=256)
+
+    trainer2.full_training(100000, 20,
+                           gamma=0.95,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=64,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=0.001
+                           )
+    trainer3 = Trainer(hidden_size=256)
+
+    trainer3.full_training(100000, 20,
+                           gamma=0.95,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=128,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=-0.005
+                           )
+
+    trainer4 = Trainer(hidden_size=256)
+
+    trainer4.full_training(100000, 20,
+                           gamma=0.95,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=128,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=0.001
+                           )
+
+    trainer5 = Trainer(hidden_size=256)
+
+    trainer5.full_training(100000, 20,
+                           gamma=0.99,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=64,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=-0.005
+                           )
+
+    trainer6 = Trainer(hidden_size=256)
+
+    trainer6.full_training(100000, 20,
+                           gamma=0.99,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=64,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=0.001
+                           )
+    trainer7 = Trainer(hidden_size=256)
+
+    trainer7.full_training(100000, 20,
+                           gamma=0.99,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=128,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=-0.005
+                           )
+
+    trainer8 = Trainer(hidden_size=256)
+
+    trainer8.full_training(100000, 20,
+                           gamma=0.99,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=128,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=0.001
+                           )
+
+    trainer9 = Trainer(hidden_size=128)
+
+    trainer9.full_training(100000, 20,
+                           gamma=0.95,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=64,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=-0.005
+                           )
+
+    trainer10 = Trainer(hidden_size=128)
+
+    trainer10.full_training(100000, 20,
+                           gamma=0.95,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=64,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=0.001
+                           )
+    trainer11 = Trainer(hidden_size=128)
+
+    trainer11.full_training(100000, 20,
+                           gamma=0.95,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=128,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=-0.005
+                           )
+
+    trainer12 = Trainer(hidden_size=128)
+
+    trainer12.full_training(100000, 20,
+                           gamma=0.95,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=128,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=0.001
+                           )
+
+    trainer13 = Trainer(hidden_size=128)
+
+    trainer13.full_training(100000, 20,
+                           gamma=0.99,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=64,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=-0.005
+                           )
+
+    trainer14= Trainer(hidden_size=128)
+
+    trainer14.full_training(100000, 20,
+                           gamma=0.99,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=64,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=0.001
+                           )
+    trainer15 = Trainer(hidden_size=128)
+
+    trainer15.full_training(100000, 20,
+                           gamma=0.99,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=128,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=-0.005
+                           )
+
+    trainer16 = Trainer(hidden_size=128)
+
+    trainer16.full_training(100000, 20,
+                           gamma=0.99,
+                           epsilon=1.0,
+                           epsilon_min=0.01,
+                           epsilon_decay=0.99995,
+                           learning_rate=0.001,
+                           batch_size=128,
+
+                           win_reward=1.0,
+                           draw_reward=0.1,
+                           lose_reward=-1.0,
+                           survive_reward=0.001
+                           )
