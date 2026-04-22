@@ -23,10 +23,10 @@ Die Spielumgebung ist Primär die VierGewinnt Klasse, in welcher die Logik für 
 
 Das Training setzt sich aus mehreren Ebenen zusammen. Die unterste Ebene ist Episode. Diese Klasse ist verantwortlich für ein einziges in sich geschlossenes Traingsspiel, in welchem der gesamte Spielablauf stattfindet und die Belohungen für den Agenten verteilt werden. Auf der Ebene darüber ist Session, welche mehrere Episoden verwaltet und unter den gleichen Parametern (abgesehen von den trainierten Agenten) durchführt und mithilfe von der Klasse Logger Trainingsdaten speichert. Die Klase Trainer widerum ist verantwortlich für das Verwalten mehrer Sessions und entsprechend des genauen Traingsablaufs (s.o.). Training ist die oberste Ebene, welche ähnlich zu Game die Schnittstelle für die Menschliche Interaktion darstellt. Das Modul logic stellt allgemeine Hilsfunktionen, primär für die Navigation der Ordnerstruktur, zur Verfügung. 
 
-> Eine Ausführliche technische Dokumentation inklusive UML Diagramm und Beschreibung einzelner Methoden ist als PDF dem Repository beigelegt
+> Eine Ausführliche [technische Dokumentation](https://github.com/jonathan-dersthof/deep_learning_vier_gewinnt/blob/main/Dokumentation%20Facharbeit.pdf) inklusive UML Diagramm und Beschreibung einzelner Methoden ist als PDF dem Repository beigelegt
 ***
   - Ergebnisse
     
 In der Durchführung des Trainings sind einige Grenzen klar geworden, welche einerseits mit dem Ansatz selbst zusammenhängen, aber anderseits auch mit einer fehlerhaften Implementierung meinerseits zusammenhängen. Die gößten verpassten Chancen sind das nicht vollständige Implementieren eines ConvDQN, welche Probleme des Modells mit dem Verständnis von Räumlichkeit lösen würde und das vollständige Verbieten illegaler Züge des Agenten, wodurch der Agent im Training nicht lernt, dass das Spielfeld nach oben hin begrenzt ist. Außerdem ist die Implementierung mit der Klasse Trainer für einen wisssenschaftlichen Versuch zwar gut geeignet, aber wäre für einen Benutzer des Programms über die Textoberfläche zu restriktiv/umständliche.
 
-Für eine ausführlichere Auswertung liegt dem Repository außerdem
+Für eine ausführlichere Auswertung liegt dem Repository außerdem die eigentliche [Facharbeit](https://github.com/jonathan-dersthof/deep_learning_vier_gewinnt/blob/main/Informatik%20Facharbeit.pdf) sowie eine Übersicht über die [Trainingsdaten](https://github.com/jonathan-dersthof/deep_learning_vier_gewinnt/blob/main/Trainingsdaten%20Facharbeit.pdf) bei. 
